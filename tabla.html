@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tabla Periódica Animada 3D</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at center, #071a14 0%, #020504 48%, #000 100%);
+      color: #ffffff;
+    }
+
+    body {
+      perspective: 1600px;
+    }
+
+    .controls {
+      position: fixed;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 1px solid rgba(106, 255, 183, 0.25);
+      border-radius: 16px;
+      background: rgba(8, 28, 22, 0.72);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 24px rgba(0, 255, 140, 0.12);
+    }
+
+    .controls button {
+      border: 0;
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #dcffee;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+
+    .controls button:hover,
+    .controls button.active {
+      background: #ecfff5;
+      color: #071a14;
+      box-shadow: 0 0 18px rgba(85, 255, 170, 0.45);
+    }
+
+    .viewport {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 1600px;
+      overflow: hidden;
+    }
+
+    .scene {
+      position: relative;
+      width: 1px;
+      height: 1px;
+      transform-style: preserve-3d;
+    }
+
+    .scene.rotate {
+      animation: rotateScene 34s linear infinite;
+    }
+
+    .element {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 70px;
+      height: 88px;
+      margin-left: -35px;
+      margin-top: -44px;
+      border-radius: 10px;
+      border: 1px solid rgba(100, 255, 175, 0.6);
+      background: linear-gradient(145deg, rgba(3, 96, 58, 0.84), rgba(0, 26, 20, 0.94));
+      color: #7dff9c;
+      text-align: center;
+      transform-style: preserve-3d;
+      transition: transform 1.15s cubic-bezier(.22,1,.36,1), opacity .4s ease;
+      box-shadow:
+        0 0 18px rgba(0, 255, 135, 0.24),
+        inset 0 0 16px rgba(170, 255, 205, 0.12);
+      overflow: hidden;
+    }
+
+    .element::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,.18), transparent);
+      transform: translateX(-120%);
+      animation: shine 4s infinite;
+    }
+
+    .element.nonmetal {
+      border-color: rgba(255, 85, 95, 0.75);
+      background: linear-gradient(145deg, rgba(118, 12, 25, 0.86), rgba(26, 0, 8, 0.96));
+      color: #ff6868;
+      box-shadow: 0 0 18px rgba(255, 55, 70, 0.26), inset 0 0 16px rgba(255, 145, 145, 0.12);
+    }
+
+    .element.metalloid {
+      border-color: rgba(255, 225, 75, 0.75);
+      background: linear-gradient(145deg, rgba(126, 106, 10, 0.86), rgba(28, 23, 0, 0.96));
+      color: #fff261;
+      box-shadow: 0 0 18px rgba(255, 220, 45, 0.24), inset 0 0 16px rgba(255, 235, 145, 0.12);
+    }
+
+    .number {
+      position: absolute;
+      top: 7px;
+      right: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      opacity: .92;
+    }
+
+    .symbol {
+      margin-top: 24px;
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 900;
+      text-shadow: 0 0 12px currentColor;
+    }
+
+    .name {
+      margin-top: 8px;
+      padding: 0 5px;
+      font-size: 9px;
+      font-weight: 700;
+      opacity: .9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .caption {
+      position: fixed;
+      left: 50%;
+      bottom: 34px;
+      transform: translateX(-50%);
+      z-index: 50;
+      color: rgba(210, 255, 230, .78);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .4px;
+      text-align: center;
+    }
+
+    @keyframes rotateScene {
+      from { transform: rotateY(0deg); }
+      to { transform: rotateY(360deg); }
+    }
+
+    @keyframes shine {
+      0%, 55% { transform: translateX(-130%); }
+      78%, 100% { transform: translateX(130%); }
+    }
+
+    @media (max-width: 900px) {
+      .controls {
+        top: 18px;
+        gap: 6px;
+      }
+
+      .controls button {
+        padding: 8px 11px;
+        font-size: 13px;
+      }
+
+      .caption {
+        font-size: 12px;
+        bottom: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="controls">
+    <button class="active" data-layout="table">table</button>
+    <button data-layout="sphere">sphere</button>
+    <button data-layout="helix">helix</button>
+    <button data-layout="grid">grid</button>
+  </div>
+
+  <main class="viewport">
+    <section class="scene" id="scene"></section>
+  </main>
+
+  <div class="caption">Tabla periódica interactiva · HTML + CSS + JavaScript</div>
+
+  <script>
+    const periodicElements = [
+      ['H','Hidrógeno','nonmetal'], ['He','Helio','nonmetal'],
+      ['Li','Litio','metal'], ['Be','Berilio','metal'], ['B','Boro','metalloid'], ['C','Carbono','nonmetal'], ['N','Nitrógeno','nonmetal'], ['O','Oxígeno','nonmetal'], ['F','Flúor','nonmetal'], ['Ne','Neón','nonmetal'],
+      ['Na','Sodio','metal'], ['Mg','Magnesio','metal'], ['Al','Aluminio','metal'], ['Si','Silicio','metalloid'], ['P','Fósforo','nonmetal'], ['S','Azufre','nonmetal'], ['Cl','Cloro','nonmetal'], ['Ar','Argón','nonmetal'],
+      ['K','Potasio','metal'], ['Ca','Calcio','metal'], ['Sc','Escandio','metal'], ['Ti','Titanio','metal'], ['V','Vanadio','metal'], ['Cr','Cromo','metal'], ['Mn','Manganeso','metal'], ['Fe','Hierro','metal'], ['Co','Cobalto','metal'], ['Ni','Níquel','metal'], ['Cu','Cobre','metal'], ['Zn','Zinc','metal'], ['Ga','Galio','metal'], ['Ge','Germanio','metalloid'], ['As','Arsénico','metalloid'], ['Se','Selenio','nonmetal'], ['Br','Bromo','nonmetal'], ['Kr','Kriptón','nonmetal'],
+      ['Rb','Rubidio','metal'], ['Sr','Estroncio','metal'], ['Y','Itrio','metal'], ['Zr','Circonio','metal'], ['Nb','Niobio','metal'], ['Mo','Molibdeno','metal'], ['Tc','Tecnecio','metal'], ['Ru','Rutenio','metal'], ['Rh','Rodio','metal'], ['Pd','Paladio','metal'], ['Ag','Plata','metal'], ['Cd','Cadmio','metal'], ['In','Indio','metal'], ['Sn','Estaño','metal'], ['Sb','Antimonio','metalloid'], ['Te','Telurio','metalloid'], ['I','Yodo','nonmetal'], ['Xe','Xenón','nonmetal'],
+      ['Cs','Cesio','metal'], ['Ba','Bario','metal'], ['La','Lantano','metal'], ['Ce','Cerio','metal'], ['Pr','Praseodimio','metal'], ['Nd','Neodimio','metal'], ['Pm','Prometio','metal'], ['Sm','Samario','metal'], ['Eu','Europio','metal'], ['Gd','Gadolinio','metal'], ['Tb','Terbio','metal'], ['Dy','Disprosio','metal'], ['Ho','Holmio','metal'], ['Er','Erbio','metal'], ['Tm','Tulio','metal'], ['Yb','Iterbio','metal'], ['Lu','Lutecio','metal'], ['Hf','Hafnio','metal'], ['Ta','Tantalio','metal'], ['W','Wolframio','metal'], ['Re','Renio','metal'], ['Os','Osmio','metal'], ['Ir','Iridio','metal'], ['Pt','Platino','metal'], ['Au','Oro','metal'], ['Hg','Mercurio','metal'], ['Tl','Talio','metal'], ['Pb','Plomo','metal'], ['Bi','Bismuto','metal'], ['Po','Polonio','metalloid'], ['At','Astato','nonmetal'], ['Rn','Radón','nonmetal'],
+      ['Fr','Francio','metal'], ['Ra','Radio','metal'], ['Ac','Actinio','metal'], ['Th','Torio','metal'], ['Pa','Protactinio','metal'], ['U','Uranio','metal'], ['Np','Neptunio','metal'], ['Pu','Plutonio','metal'], ['Am','Americio','metal'], ['Cm','Curio','metal'], ['Bk','Berkelio','metal'], ['Cf','Californio','metal'], ['Es','Einstenio','metal'], ['Fm','Fermio','metal'], ['Md','Mendelevio','metal'], ['No','Nobelio','metal'], ['Lr','Lawrencio','metal']
+    ];
+
+    const scene = document.getElementById('scene');
+    const buttons = document.querySelectorAll('.controls button');
+    const cards = [];
+
+    periodicElements.forEach((element, index) => {
+      const [symbol, name, type] = element;
+      const card = document.createElement('article');
+      card.className = `element ${type}`;
+      card.innerHTML = `
+        <div class="number">${index + 1}</div>
+        <div class="symbol">${symbol}</div>
+        <div class="name">${name}</div>
+      `;
+      scene.appendChild(card);
+      cards.push(card);
+    });
+
+    function getScale() {
+      const widthScale = window.innerWidth / 1580;
+      const heightScale = window.innerHeight / 760;
+      return Math.min(widthScale, heightScale, 1) * 0.92;
+    }
+
+    function tableLayout(index) {
+      const columns = 18;
+      const cardGapX = 82;
+      const cardGapY = 100;
+      const rows = Math.ceil(cards.length / columns);
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      const x = (col - (columns - 1) / 2) * cardGapX;
+      const y = (row - (rows - 1) / 2) * cardGapY;
+      return `translate3d(${x}px, ${y}px, 0px)`;
+    }
+
+    function sphereLayout(index) {
+      const total = cards.length;
+      const radius = 350;
+
+      // Distribución uniforme tipo esfera para que no se deforme ni quede como espiral rota
+      const offset = 2 / total;
+      const increment = Math.PI * (3 - Math.sqrt(5));
+
+      const y = ((index * offset) - 1) + (offset / 2);
+      const r = Math.sqrt(1 - y * y);
+      const phi = index * increment;
+
+      const x = Math.cos(phi) * r * radius;
+      const z = Math.sin(phi) * r * radius;
+      const finalY = y * radius;
+
+      // Las tarjetas quedan distribuidas alrededor de una esfera, manteniendo forma circular
+      return `translate3d(${x}px, ${finalY}px, ${z}px)`;
+    }
+
+    function helixLayout(index) {
+      const radius = 370;
+      const angle = index * 0.34;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const y = (index - cards.length / 2) * 8;
+      return `translate3d(${x}px, ${y}px, ${z}px) rotateY(${angle}rad)`;
+    }
+
+    function gridLayout(index) {
+      const columns = 9;
+      const rows = 5;
+      const cardGapX = 112;
+      const cardGapY = 125;
+      const cardGapZ = 190;
+      const col = index % columns;
+      const row = Math.floor(index / columns) % rows;
+      const layer = Math.floor(index / (columns * rows));
+      const x = (col - (columns - 1) / 2) * cardGapX;
+      const y = (row - (rows - 1) / 2) * cardGapY;
+      const z = (layer - 1) * cardGapZ;
+      return `translate3d(${x}px, ${y}px, ${z}px)`;
+    }
+
+    const layouts = {
+      table: tableLayout,
+      sphere: sphereLayout,
+      helix: helixLayout,
+      grid: gridLayout
+    };
+
+    function setLayout(layoutName) {
+      scene.classList.toggle('rotate', layoutName !== 'table');
+      scene.style.transform = `scale(${getScale()})`;
+
+      cards.forEach((card, index) => {
+        card.style.transform = layouts[layoutName](index);
+      });
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        buttons.forEach(item => item.classList.remove('active'));
+        button.classList.add('active');
+        setLayout(button.dataset.layout);
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const activeButton = document.querySelector('.controls button.active');
+      setLayout(activeButton.dataset.layout);
+    });
+
+    setLayout('table');
+  </script>
+</body>
+</html>
+
